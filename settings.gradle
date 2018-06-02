@@ -1,1 +1,1 @@
-include ':app', ':zj_video'
+include ':app', ':zj_video', ':zj_basemodule', ':zj_net'

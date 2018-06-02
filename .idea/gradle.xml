@@ -9,6 +9,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/zj_basemodule" />
+            <option value="$PROJECT_DIR$/zj_net" />
             <option value="$PROJECT_DIR$/zj_video" />
           </set>
         </option>
