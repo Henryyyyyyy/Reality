@@ -84,11 +84,11 @@ public class XueErVideoView extends RelativeLayout implements TextureView.Surfac
         texture_video.setLayoutParams(params);//新加
 //        texture_video = new TextureView(mContext);
 //        addView(texture_video, params);
-        //添加imageview  cover
+//        添加imageview  cover
 //        iv_cover = new ImageView(mContext);
 //        iv_cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
 //        addView(iv_cover, params);
-        //添加progressbar
+//        添加progressbar
         pb_loading = new ProgressBar(mContext, null, android.R.attr.progressBarStyle);
         params = new LayoutParams(DimenUtil.dp2px(mContext, 30f), DimenUtil.dp2px(mContext, 30f));
         params.addRule(CENTER_IN_PARENT);

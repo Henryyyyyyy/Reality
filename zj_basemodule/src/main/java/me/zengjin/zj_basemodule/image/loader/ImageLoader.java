@@ -1,117 +1,84 @@
-//package me.zengjin.zj_basemodule.image.loader;
-//
-//import android.content.Context;
-//import android.view.View;
-//
-//import com.bumptech.glide.MemoryCategory;
-//
-//import imageloader.libin.com.images.config.GlobalConfig;
-//import imageloader.libin.com.images.config.SingleConfig;
-//import imageloader.libin.com.images.utils.DownLoadImageService;
-//
-///**
-// * Created by doudou on 2017/4/19.
-// */
-//
-//public class ImageLoader {
-//    public static Context context;
-//    /**
-//     * 默认最大缓存
-//     */
-//    public static int CACHE_IMAGE_SIZE = 250;
-//
-//    public static void init(final Context context) {
-//        init(context, CACHE_IMAGE_SIZE);
-//    }
-//
-//    public static void init(final Context context, int cacheSizeInM) {
-//        init(context, cacheSizeInM, MemoryCategory.NORMAL);
-//    }
-//
-//    public static void init(final Context context, int cacheSizeInM, MemoryCategory memoryCategory) {
-//        init(context, cacheSizeInM, memoryCategory, true);
-//    }
-//
-//    /**
-//     * @param context        上下文
-//     * @param cacheSizeInM   Glide默认磁盘缓存最大容量250MB
-//     * @param memoryCategory 调整内存缓存的大小 LOW(0.5f) ／ NORMAL(1f) ／ HIGH(1.5f);
-//     * @param isInternalCD   true 磁盘缓存到应用的内部目录 / false 磁盘缓存到外部存
-//     */
-//    public static void init(final Context context, int cacheSizeInM, MemoryCategory memoryCategory, boolean isInternalCD) {
-//        ImageLoader.context = context;
-//        GlobalConfig.init(context, cacheSizeInM, memoryCategory, isInternalCD);
-//    }
-//
-//    /**
-//     * 获取当前的Loader
-//     * @return
-//     */
-//    public static ILoader getActualLoader() {
-//        return GlobalConfig.getLoader();
-//    }
-//
-//    /**
-//     * 加载普通图片
-//     *
-//     * @param context
-//     * @return
-//     *
-//     */
-//    public static SingleConfig.ConfigBuilder with(Context context) {
-//        return new SingleConfig.ConfigBuilder(context);
-//    }
-//
-//    public static void trimMemory(int level) {
-//        getActualLoader().trimMemory(level);
-//    }
-//
-//    public static void clearAllMemoryCaches() {
-//        getActualLoader().clearAllMemoryCaches();
-//    }
-//
-//    public static void pauseRequests() {
-//        getActualLoader().pause();
-//
-//    }
-//
-//    public static void resumeRequests() {
-//        getActualLoader().resume();
-//    }
-//
-//    /**
-//     *Cancel any pending loads Glide may have for the view and free any resources that may have been loaded for the view.
-//     * @param view
-//     */
-//    public static void clearMomoryCache(View view) {
-//        getActualLoader().clearMomoryCache(view);
-//    }
-//
-//
-//    /**
-//     * Clears disk cache.
-//     *
-//     * <p>
-//     *     This method should always be called on a background thread, since it is a blocking call.
-//     * </p>
-//     */
-//    public static void clearDiskCache() {
-//        getActualLoader().clearDiskCache();
-//    }
-//
-//    /**
-//     * Clears as much memory as possible.
-//     */
-//    public static void clearMomory() {
-//        getActualLoader().clearMomory();
-//    }
-//
-//    /**
-//     * 图片保存到相册
-//     *
-//     * @param downLoadImageService
-//     */
-//    public static void saveImageIntoGallery(DownLoadImageService downLoadImageService) {
-//        getActualLoader().saveImageIntoGallery(downLoadImageService);
-//    }
-//}
+package me.zengjin.zj_basemodule.image.loader;
+
+import android.net.Uri;
+
+import java.io.File;
+
+/**
+ * 图片加载类
+ * 策略或者静态代理模式，开发者只需要关心ImageLoader + LoaderOptions
+ *
+ * ※※※※流程:
+ * imageloader的整一个流程就是getinstance->load(url),然后得到一个loaderoption对象，然后设置这个对象的信息，
+ * 最后 在into（imageview）的时候，调用真正的loader的loadimage策略去加载图片
+ * ※※※※依赖关系:
+ * 1.realloader impliment ILoaderStrategy策略
+ * 2.loaderoption是单独的，用来规定加载图片的一些固有参数
+ * 3.imageloader依赖ILoaderStrategy和loaderoption,主要是用来构造一个loaderoption对象
+ * 2-3总结，imageloader通过构造loaderoption对象进行设置参数，最后option的into方法又调用
+ * imager中的ILoaderStrategy，把option传给它，间接使用realloader加载图片
+ */
+
+public class ImageLoader{
+	private static ILoaderStrategy sLoader;
+	private static volatile ImageLoader mInstance;
+
+	private ImageLoader() {
+	}
+
+	//单例模式
+	public static ImageLoader getInstance() {
+		if (mInstance == null) {
+			synchronized (ImageLoader.class) {
+				if (mInstance == null) {
+					mInstance = new ImageLoader();
+				}
+			}
+		}
+		return mInstance;
+	}
+
+	public static ILoaderStrategy getRealLoader() {
+		return sLoader;
+	}
+
+	/**
+	 * 提供全局替换图片加载框架的接口，若切换其它框架，可以实现一键全局替换
+	 */
+	public void setGlobalImageLoader(ILoaderStrategy loader) {
+		sLoader = loader;
+	}
+
+	public LoaderOptions load(String url) {
+		return new LoaderOptions(url);
+	}
+	public LoaderOptions load(int drawable) {
+		return new LoaderOptions(drawable);
+	}
+
+	public LoaderOptions load(File file) {
+		return new LoaderOptions(file);
+	}
+
+	public LoaderOptions load(Uri uri) {
+		return new LoaderOptions(uri);
+	}
+
+
+
+	public void clearMemoryCache() {
+		checkNotNull();
+		sLoader.clearMemoryCache();
+	}
+
+	public void clearDiskCache() {
+		checkNotNull();
+		sLoader.clearDiskCache();
+	}
+
+	private void checkNotNull() {
+		if (sLoader == null) {
+			throw new NullPointerException("you must be set your imageLoader at first!");
+		}
+	}
+}
